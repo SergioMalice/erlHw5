@@ -62,24 +62,23 @@ map() ->
   ets:insert(table, #speed{operation = function_read, data_type = map, time = Function}).
 
 map_create(?Count, Res) -> Res;
-map_create(Cnt, Res) -> map_create(Cnt+1, maps:put(<<"Key", Cnt>>, <<"Value", Cnt>>, Res)).
+map_create(Cnt, Res) -> map_create(Cnt+1, maps:put(Cnt, Cnt, Res)).
 
 map_update(?Count, Res) -> Res;
 map_update(Cnt, Map) ->
   Index = round(rand:uniform()*(?Count-1))+1,
-  map_update(Cnt+1, maps:update(<<"Key", Index>>, <<Index>>, Map)).
+  map_update(Cnt+1, maps:update(Index, Index, Map)).
 
 map_pattern(?Count, Res) -> Res;
 map_pattern(Cnt, Map) ->
   Index = round(rand:uniform()*(?Count-1))+1,
-  Key = <<"Key", Index>>,
-  #{Key := Value} = Map,
+  #{Index := Value} = Map,
   Value, map_pattern(Cnt+1, Map).
 
 map_function(?Count, Res) -> Res;
 map_function(Cnt, Map) ->
   Index = round(rand:uniform()*(?Count-1))+1,
-  maps:get(<<"Key", Index>>, Map),
+  maps:get(Index, Map),
   map_function(Cnt+1, Map).
 
 % Тестирование списков
@@ -95,12 +94,12 @@ proplist() ->
   ets:insert(table, #speed{operation = function_read, data_type = proplist, time = Function}).
 
 proplist_create(?Count, Res) -> lists:reverse(Res);
-proplist_create(Cnt, List) -> proplist_create(Cnt+1, [{<<"Key", Cnt>>, <<"Value", Cnt>>}|List]).
+proplist_create(Cnt, List) -> proplist_create(Cnt+1, [{Cnt, Cnt}|List]).
 
 proplist_update(?Count, Res) -> Res;
 proplist_update(Cnt, List) ->
   Index = round(rand:uniform()*(?Count-1))+1,
-  proplist_update(Cnt+1, lists:keyreplace(<<"Key", Index>>, 1, List, {<<"Key", Index>>, <<Index>>})).
+  proplist_update(Cnt+1, lists:keyreplace(Index, 1, List, {Index, Index})).
 
 proplist_pattern_lookup([{Key, Value}|_], Key) -> Value;
 proplist_pattern_lookup([{_, _}|T], Key) -> proplist_pattern_lookup(T, Key).
@@ -108,13 +107,13 @@ proplist_pattern_lookup([{_, _}|T], Key) -> proplist_pattern_lookup(T, Key).
 proplist_pattern(?Count, Res) -> Res;
 proplist_pattern(Cnt, List) ->
   Index = round(rand:uniform()*(?Count-1))+1,
-  proplist_pattern_lookup(List, <<"Key", Index>>),
+  proplist_pattern_lookup(List, Index),
   proplist_pattern(Cnt+1, List).
 
 proplist_function(?Count, Res) -> Res;
 proplist_function(Cnt, List) ->
   Index = round(rand:uniform()*(?Count-1))+1,
-  proplists:get_value(<<"Key", Index>>, List),
+  proplists:get_value(Index, List),
   proplist_function(Cnt+1, List).
 
 % Тестирование dict
@@ -128,17 +127,17 @@ dict() ->
   ets:insert(table, #speed{operation = function_read, data_type = dict, time = Function}).
 
 dict_create(?Count, Res) -> Res;
-dict_create(Cnt, Dict) -> dict_create(Cnt+1, dict:store(<<"Key", Cnt>>, <<"Value", Cnt>>, Dict)).
+dict_create(Cnt, Dict) -> dict_create(Cnt+1, dict:store(Cnt, Cnt, Dict)).
 
 dict_update(?Count, Res) -> Res;
 dict_update(Cnt, Dict) ->
   Index = round(rand:uniform()*(?Count-1))+1,
-  dict_update(Cnt+1, dict:update(<<"Key", Index>>, fun(_) -> <<Index>> end, Dict)).
+  dict_update(Cnt+1, dict:update(Index, fun(_) -> Index end, Dict)).
 
 dict_function(?Count, Res) -> Res;
 dict_function(Cnt, Dict) ->
   Index = round(rand:uniform()*(?Count-1))+1,
-  dict:fetch(<<"Key", Index>>, Dict),
+  dict:fetch(Index, Dict),
   dict_function(Cnt+1, Dict).
 
 % Тестирование process dictionary
@@ -152,18 +151,18 @@ process_dict() ->
   ets:insert(table, #speed{operation = function_read, data_type = process_dict, time = Function}).
 
 process_dict_create(?Count) -> ok;
-process_dict_create(Cnt) -> put(<<"Key", Cnt>>, <<"Value", Cnt>>).
+process_dict_create(Cnt) -> put(Cnt, Cnt).
 
 process_dict_update(?Count) -> ok;
 process_dict_update(Cnt) ->
   Index = round(rand:uniform()*(?Count-1))+1,
-  put(<<"Key", Index>>, <<Index>>),
+  put(Index, Index),
   process_dict_update(Cnt+1).
 
 process_dict_function(?Count, Res) -> Res;
 process_dict_function(Cnt, _) ->
   Index = round(rand:uniform()*(?Count-1))+1,
-  process_dict_function(Cnt+1, get(<<"Key", Index>>)).
+  process_dict_function(Cnt+1, get(Index)).
 
 % Тестирование ETS
 
@@ -178,17 +177,17 @@ ets() ->
 
 ets_create(?Count) -> ok;
 ets_create(Cnt) ->
-  ets:insert(test, {<<"Key", Cnt>>, <<"Value", Cnt>>}),
+  ets:insert(test, {Cnt, Cnt}),
   ets_create(Cnt+1).
 
 ets_update(?Count) -> ok;
 ets_update(Cnt) ->
   Index = round(rand:uniform()*(?Count-1))+1,
-  ets:insert(test, {<<"Key", Index>>, <<Index>>}),
+  ets:insert(test, {Index, Index}),
   ets_update(Cnt+1).
 
 ets_function(?Count) -> ok;
 ets_function(Cnt) ->
   Index = round(rand:uniform()*(?Count-1))+1,
-  ets:lookup(test, <<"Key", Index>>),
+  ets:lookup(test, Index),
   ets_function(Cnt+1).
