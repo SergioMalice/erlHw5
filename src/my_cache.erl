@@ -38,18 +38,18 @@
 %
 % Для удаления методом ets:select_delete матчспека должна возвращать true, иначе объект удален не будет.
 
-create(Name) -> ets:new(Name, [named_table, duplicate_bag, {keypos, #cache.key}]).
+create(Name) -> ets:new(Name, [named_table, duplicate_bag, {keypos, #cache.key}]), ok.
 
-insert(TName, Key, Val, Life) ->
-  Time = calendar:datetime_to_gregorian_seconds(calendar:universal_time()),
-  ets:insert(TName, #cache{key=Key, value = Val, life = Life, time = Time}).
+insert(TName, Key, Val, Time) ->
+  Life = calendar:datetime_to_gregorian_seconds(calendar:universal_time())+Time,
+  ets:insert(TName, #cache{key=Key, value = Val, life = Life}), ok.
 
 lookup(TName, Key) ->
+  List = ets:lookup(TName, Key),
   Now = calendar:datetime_to_gregorian_seconds(calendar:universal_time()),
-  ets:select(TName, [{#cache{key = '$1', value = '$2', life = '$3', time = '$4'},
-    [{'>', '$3', {'-', Now, '$4'}}, {'==', '$1', Key}], ['$2']}]).
+  [{ok, El#cache.value} || El <- List, El#cache.life > Now].
 
 delete_obsolete(TName) ->
   Now = calendar:datetime_to_gregorian_seconds(calendar:universal_time()),
-  ets:select_delete(TName, [{#cache{key = '$1', value = '$2', life = '$3', time = '$4'},
-    [{'=<', '$3', {'-', Now, '$4'}}], [true]}]).
+  ets:select_delete(TName, [{#cache{key = '$1', value = '$2', life = '$3'},
+    [{'=<', '$3', Now}], [true]}]), ok.

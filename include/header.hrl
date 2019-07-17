@@ -7,4 +7,4 @@
 %%% Created : 13. Июль 2019 19:19
 %%%-------------------------------------------------------------------
 -author("sergeyb").
--record(cache, {key, value, life=30, time}).
+-record(cache, {key, value, life=30}).
