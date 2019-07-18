@@ -19,7 +19,7 @@
 %
 % operation = create, update, pattern_match_read, function_read, что соответственно означает
 % скорость создания, обновления полей, чтения значения через сопоставление по образцу, чтение через вызов функций;
-% data_type = map, proplist, dict, process_dict, ets;
+% data_type = map, proplist, dict, process_dict, ets, record;
 % ну и time - записанное время выполнения операции.
 %
 % Тестировать будем вышеуказанные операции на заданных типах данных, на примере -
@@ -38,12 +38,14 @@
 -export([dict/0, dict_create/2, dict_update/2, dict_function/2]).
 -export([process_dict/0, process_dict_create/1, process_dict_update/1, process_dict_function/2]).
 -export([ets/0, ets_create/1, ets_update/1, ets_function/1]).
+-export([record/0, record_create/2, record_update/2, record_pattern/2]).
 
+-record(pair, {key, value}).
 -define(Count, 10000).
 
 print() ->
   ets:new(table, [named_table, duplicate_bag, {keypos, #speed.operation}]),
-  map(), proplist(), dict(), process_dict(), ets(),
+  map(), proplist(), dict(), process_dict(), ets(), record(),
   io:format("Create speed: ~p~n~n", [lists:sort(ets:lookup(table, create))]),
   io:format("Update speed: ~p~n~n", [lists:sort(ets:lookup(table, update))]),
   io:format("Pattern match read speed: ~p~n~n", [lists:sort(ets:lookup(table, pattern_match_read))]),
@@ -191,3 +193,30 @@ ets_function(Cnt) ->
   Index = round(rand:uniform()*(?Count-2))+1,
   ets:lookup(test, Index),
   ets_function(Cnt+1).
+
+% Тестирование records
+
+record() ->
+  {Create, Rec} = timer:tc(speed_test, record_create, [0, []]),
+  ets:insert(table, #speed{operation = create, data_type = record, time = Create}),
+  {Update, _} = timer:tc(speed_test, record_update, [0, Rec]),
+  ets:insert(table, #speed{operation = update, data_type = record, time = Update}),
+  {Pattern, _} = timer:tc(speed_test, record_pattern, [0, Rec]),
+  ets:insert(table, #speed{operation = pattern_match_read, data_type = record, time = Pattern}).
+
+record_create(?Count, Res) -> lists:reverse(Res);
+record_create(Cnt, Res) -> record_create(Cnt+1, [#pair{key = Cnt, value = Cnt}|Res]).
+
+record_update(?Count, Res) -> Res;
+record_update(Cnt, Rec) ->
+  Index = round(rand:uniform()*(?Count-2))+1,
+  record_update(Cnt+1, lists:keyreplace(Index, 2, Rec, #pair{value = Index})).
+
+record_pattern_lookup([#pair{key = Key, value = Value}|_], Key) -> Value;
+record_pattern_lookup([_|T], Key) -> record_pattern_lookup(T, Key).
+
+record_pattern(?Count, Res) -> Res;
+record_pattern(Cnt, Rec) ->
+  Index = round(rand:uniform()*(?Count-2))+1,
+  record_pattern_lookup(Rec, Index),
+  record_pattern(Cnt+1, Rec).
